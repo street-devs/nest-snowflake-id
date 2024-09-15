@@ -1,0 +1,66 @@
+{
+  "name": "@street-devs/nest-snowflake-id",
+  "version": "1.0.0",
+  "description": "A simple and lightweight package provides support for sending notifications across a variety of delivery channels",
+  "author": "duysolo <duypt.dev@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/street-devs/nest-snowflake-id.git"
+  },
+  "keywords": [
+    "street-devs",
+    "snowflake id",
+    "nestjs snowflake id"
+  ],
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "private": false,
+  "license": "MIT",
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "dev": "npm run prebuild && tsc --build tsconfig.json",
+    "build": "npm run prebuild && tsc --build tsconfig.build.json",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "increase-version": "node scripts/increase-version.js"
+  },
+  "devDependencies": {
+    "@nestjs/core": "^10.2.3",
+    "@nestjs/common": "^10.2.3",
+    "@nestjs/cli": "^10.1.16",
+    "@nestjs/schematics": "^10.0.2",
+    "@nestjs/testing": "^10.2.3",
+    "@rushstack/eslint-config": "^3.3.3",
+    "@types/jest": "^29.5.4",
+    "@types/node": "^20.5.7",
+    "@types/supertest": "^2.0.12",
+    "@typescript-eslint/eslint-plugin": "^8.4.0",
+    "@typescript-eslint/parser": "^8.4.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-typescript": "^3.6.3",
+    "eslint-plugin-import": "^2.30.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "prettier": "^3.3.3",
+    "eslint": "^8.48.0",
+    "jest": "^29.6.4",
+    "supertest": "^6.3.3",
+    "ts-jest": "^29.1.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2",
+    "reflect-metadata": "^0.1.13",
+    "rimraf": "^5.0.1"
+  },
+  "peerDependencies": {
+    "@nestjs/core": "^10.0.0 || ^9.0.0 || ^8.0.0 || ^7.0.0",
+    "@nestjs/common": "^10.0.0 || ^9.0.0 || ^8.0.0 || ^7.0.0",
+    "reflect-metadata": "^0.1.13"
+  },
+  "peerDependenciesMeta": {},
+  "bugs": {
+    "url": "https://github.com/street-devs/nest-snowflake-id/issues"
+  },
+  "homepage": "https://github.com/street-devs/nest-snowflake-id#readme",
+  "directories": {
+    "test": "test"
+  }
+}

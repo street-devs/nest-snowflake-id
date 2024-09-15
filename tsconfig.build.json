@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "sourceMap": false,
+    "sourceRoot": ""
+  },
+  "exclude": [
+    "node_modules",
+    "test",
+    "dist",
+    "src/tests/*.ts",
+    "src/**/__tests__/**/*.ts",
+    "src/**/*.spec.ts",
+    "src/**/*.e2e-spec.ts",
+    "src/**/*.ft-spec.ts"
+  ]
+}
