@@ -12,8 +12,8 @@
     "snowflake id",
     "nestjs snowflake id"
   ],
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "private": false,
   "license": "MIT",
   "scripts": {
