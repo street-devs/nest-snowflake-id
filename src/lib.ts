@@ -4,109 +4,164 @@ declare global {
   }
 }
 
-// TOTAL_BITS is the total number of bits that the ID can have
-const TOTAL_BITS = 64n
-
-// EPOCH_BITS is the total number of bits that are occupied by the UNIX timestamp
-const EPOCH_BITS = 42n
-
-// INSTANCE_ID_BITS is the total number of bits that are occupied by the node id
-const INSTANCE_ID_BITS = 12n
-
-// SEQUENCE_BITS is the total number of bits that are occupied by the sequence ids
-const SEQUENCE_BITS = 10n
-
-const MAX_INSTANCE_ID = (1n << INSTANCE_ID_BITS) - 1n
-const MAX_SEQUENCE = (1n << SEQUENCE_BITS) - 1n
-
 BigInt.prototype.toJSON = function () {
   return Number(this)
 }
 
 export interface SnowflakeIdOptions {
   customEpoch?: number
-  instanceId?: number
+  machineId?: number
+  workerId?: number
+}
+
+export interface SnowflakeIdDecoded {
+  dateTime: Date
+  timestamp: bigint
+  dataCenterId: bigint
+  workerId: bigint
+  sequence: bigint
+  epoch: number
 }
 
 export class SnowflakeId {
   private _lastTimestamp: bigint
   private _customEpoch: number
   private _sequence: bigint
-  private _instanceId: bigint
+
+  private _workerId: bigint
+  private _dataCenterId: bigint
+
+  public readonly DEFAULT_EPOCH_DATETIME = new Date(
+    '2024-01-01T00:00:00Z'
+  ).getTime()
+
+  /**
+   * The total number of bits for a Snowflake ID is typically fixed at 64 bits by design.
+   * Modifying totalBits might lead to unexpected behavior or inconsistencies when encoding and decoding Snowflake IDs
+   * since the structure of Snowflake IDs is based on this fixed 64-bit structure (with specific bits assigned to timestamp, instance ID, and sequence).
+   */
+  public readonly TOTAL_BITS: bigint = 64n
+
+  public readonly EPOCH_BITS: bigint = 42n
+  public readonly WORKER_ID_BITS: bigint = 5n
+  public readonly DATA_CENTER_ID_BITS: bigint = 5n
+  public readonly SEQUENCE_BITS: bigint = 12n
+
+  public readonly MAX_WORKER_ID: bigint = (1n << this.WORKER_ID_BITS) - 1n
+  public readonly MAX_DATA_CENTER_ID: bigint =
+    (1n << this.DATA_CENTER_ID_BITS) - 1n
+
+  public readonly MAX_SEQUENCE: bigint = (1n << this.SEQUENCE_BITS) - 1n
+
+  public get machineId() {
+    return {
+      workerId: this._workerId,
+      dataCenterId: this._dataCenterId,
+    }
+  }
+
+  public get customEpoch() {
+    return this._customEpoch
+  }
 
   public constructor(opts?: SnowflakeIdOptions) {
-    const epoch = opts?.customEpoch || currentTime(0)
-    const instanceId = BigInt(
-      opts?.instanceId || random(Number(MAX_INSTANCE_ID))
+    const workerId = BigInt(
+      opts?.machineId ?? random(Number(this.MAX_WORKER_ID))
     )
 
-    if (instanceId > MAX_INSTANCE_ID) {
-      throw new Error(`instanceId must be between 0 and ${MAX_INSTANCE_ID}`)
+    if (workerId > this.MAX_WORKER_ID) {
+      throw new RangeError(
+        `Worker ID must be between 0 and ${this.MAX_WORKER_ID}`
+      )
     }
 
+    const dataCenterId = BigInt(
+      opts?.machineId ?? random(Number(this.MAX_DATA_CENTER_ID))
+    )
+
+    if (dataCenterId > this.MAX_DATA_CENTER_ID) {
+      throw new RangeError(
+        `Data Center ID must be between 0 and ${this.MAX_DATA_CENTER_ID}`
+      )
+    }
+
+    this._customEpoch = opts?.customEpoch || this.DEFAULT_EPOCH_DATETIME
     this._lastTimestamp = 0n
-    this._customEpoch = epoch
     this._sequence = 0n
-    this._instanceId = instanceId & MAX_INSTANCE_ID
+
+    this._workerId = workerId & this.MAX_WORKER_ID
+    this._dataCenterId = dataCenterId & this.MAX_DATA_CENTER_ID
   }
 
   /**
    * Generates a 64-bit unique ID.
    */
   public generate(): bigint {
-    let currentTimestamp = BigInt(currentTime(this._customEpoch))
+    const currentTimestamp = BigInt(currentTime(this._customEpoch))
 
-    if (currentTimestamp === this._lastTimestamp) {
-      this._sequence = (this._sequence + 1n) & MAX_SEQUENCE
+    this.makeSequence(currentTimestamp)
 
-      if (this._sequence === 0n) {
-        while (
-          BigInt(currentTime(this._customEpoch)) - currentTimestamp <
-          1n
-        ) {}
-        currentTimestamp += 1n
-      }
-    } else {
-      this._sequence = 0n
-    }
+    const timestampLeftShift = this.TOTAL_BITS - this.EPOCH_BITS
+    const dataCenterIdLeftShift =
+      timestampLeftShift - this.DATA_CENTER_ID_BITS - this.WORKER_ID_BITS
+    const workerIdLeftShift = dataCenterIdLeftShift - this.SEQUENCE_BITS
 
-    this._lastTimestamp = currentTimestamp
-
-    let id = currentTimestamp << (TOTAL_BITS - EPOCH_BITS)
-    id |= this._instanceId << (TOTAL_BITS - EPOCH_BITS - INSTANCE_ID_BITS)
-    id |= this._sequence
-
-    return id
+    return (
+      (currentTimestamp << timestampLeftShift) |
+      (this._dataCenterId << dataCenterIdLeftShift) |
+      (this._workerId << workerIdLeftShift) |
+      this._sequence
+    )
   }
 
   /**
-   * Decodes a given Snowflake ID and returns its components: timestamp, instanceId, and sequence.
+   * Decodes a given Snowflake ID and returns its components: timestamp, machineId, and sequence.
    * @param {bigint} id - The Snowflake ID to decode.
    */
-  public decode(id: bigint) {
+  public decode(id: bigint): SnowflakeIdDecoded {
     // Extract the timestamp
     const timestamp =
-      (id >> (TOTAL_BITS - EPOCH_BITS)) + BigInt(this._customEpoch)
+      (id >> (this.TOTAL_BITS - this.EPOCH_BITS)) + BigInt(this._customEpoch)
 
-    // Extract the instance ID
-    const instanceId = (id >> SEQUENCE_BITS) & MAX_INSTANCE_ID
+    // Extract the dataCenterId (5 bits)
+    const dataCenterId =
+      (id >> (this.WORKER_ID_BITS + this.SEQUENCE_BITS)) &
+      this.MAX_DATA_CENTER_ID
 
-    // Extract the sequence number
-    const sequence = id & MAX_SEQUENCE
+    // Extract the workerId (5 bits)
+    const workerId = (id >> this.SEQUENCE_BITS) & this.MAX_WORKER_ID
+
+    // Extract the sequence number (12 bits)
+    const sequence = id & this.MAX_SEQUENCE
 
     return {
-      timestamp: new Date(Number(timestamp)),
-      instanceId: Number(instanceId),
-      sequence: Number(sequence),
+      dateTime: new Date(Number(timestamp)),
+      timestamp,
+      dataCenterId: dataCenterId,
+      workerId: workerId,
+      sequence: sequence,
+      epoch: this._customEpoch,
     }
   }
 
-  public get instanceId() {
-    return this._instanceId
-  }
+  protected makeSequence(currentTimestamp: bigint) {
+    if (currentTimestamp !== this._lastTimestamp) {
+      this._sequence = 0n
 
-  public get customEpoch() {
-    return this._customEpoch
+      return this._sequence
+    }
+
+    this._sequence = (this._sequence + 1n) & this.MAX_SEQUENCE
+
+    // Sequence overflow, wait until next millisecond
+    if (this._sequence === 0n) {
+      this._lastTimestamp = waitUntilNextMillisecond(
+        this._customEpoch,
+        currentTimestamp
+      )
+    }
+
+    return this._sequence
   }
 }
 
@@ -115,7 +170,7 @@ export class SnowflakeId {
  * @param {number} adjust - The adjustment to subtract from the current time.
  */
 function currentTime(adjust: number): number {
-  return Math.round(Date.now()) - adjust
+  return Date.now() - adjust
 }
 
 /**
@@ -124,4 +179,17 @@ function currentTime(adjust: number): number {
  */
 function random(scale: number): number {
   return Math.floor(Math.random() * scale)
+}
+
+function waitUntilNextMillisecond(
+  customEpoch: number,
+  currentTimestamp: bigint
+) {
+  let nextTimestamp = BigInt(currentTime(customEpoch))
+
+  while (nextTimestamp - currentTimestamp < 1n) {
+    nextTimestamp = BigInt(currentTime(0))
+  }
+
+  return nextTimestamp
 }
