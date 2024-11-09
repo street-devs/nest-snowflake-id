@@ -1,5 +1,5 @@
-import { DynamicModule } from '@nestjs/common'
-import { SnowflakeIdOptions } from './lib'
+import { type DynamicModule } from '@nestjs/common'
+import { type SnowflakeIdOptions } from '@street-devs/snowflake-id'
 import { SnowflakeIdService } from './snowflake-id.service'
 
 export class SnowflakeIdModule {

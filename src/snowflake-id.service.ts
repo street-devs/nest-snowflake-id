@@ -1,5 +1,5 @@
-import { Injectable } from "@nestjs/common"
-import { SnowflakeId, SnowflakeIdOptions } from "./lib"
+import { Injectable } from '@nestjs/common'
+import { SnowflakeId, type SnowflakeIdOptions } from '@street-devs/snowflake-id'
 
 @Injectable()
 export class SnowflakeIdService {

@@ -1,7 +1,7 @@
 {
   "name": "@street-devs/nest-snowflake-id",
   "version": "1.0.0",
-  "description": "A simple and lightweight package provides support for sending notifications across a variety of delivery channels",
+  "description": "Provides a highly customizable Snowflake ID generator for NestJS applications. This generator produces unique 64-bit IDs based on the Snowflake algorithm, which consists of a timestamp, a node (instance) ID, and a sequence number. It also includes decoding capabilities to extract the components of generated IDs.",
   "author": "duysolo <duypt.dev@gmail.com>",
   "repository": {
     "type": "git",
@@ -23,6 +23,9 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "increase-version": "node scripts/increase-version.js"
+  },
+  "dependencies": {
+    "@street-devs/snowflake-id": "^1.0.3"
   },
   "devDependencies": {
     "@nestjs/core": "^10.4.1",
