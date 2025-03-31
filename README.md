@@ -47,9 +47,6 @@ You can provide custom options:
 import { Module } from '@nestjs/common';
 import { SnowflakeIdModule } from '@street-devs/nest-snowflake-id';
 
-import { Module } from '@nestjs/common';
-import { SnowflakeIdModule } from 'nest-snowflake-id';
-
 @Module({
   imports: [SnowflakeIdModule.forRoot({
     customEpoch: 1609459200000, // Custom epoch (Jan 1, 2021)
